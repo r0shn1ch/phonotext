@@ -4,7 +4,7 @@
 #include <QTextStream>
 #include <QDebug>
 #include <QElapsedTimer>
-#include <QTextCodec>
+//#include <QTextCodec>
 
 #include "phonotext.h"
 #include "proccessing.h"
@@ -29,7 +29,7 @@ int main(int argc, char *argv[])
 
     QString data;
     QTextStream in(&file);
-    in.setCodec("UTF-8"); // кодировка UTF-8
+    //in.setCodec("UTF-8"); // кодировка UTF-8
     data = in.readAll();
 
     file.close();

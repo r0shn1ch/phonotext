@@ -1009,7 +1009,7 @@
                 346,
                 348
             ],
-            "power": "19.336478"
+            "power": "20.840751"
         },
         {
             "combs": [
@@ -1762,7 +1762,7 @@
                 329,
                 330
             ],
-            "power": "52.692243"
+            "power": "52.284835"
         },
         {
             "combs": [
@@ -2176,7 +2176,7 @@
                 242,
                 243
             ],
-            "power": "16.512071"
+            "power": "15.760855"
         },
         {
             "combs": [
@@ -2658,7 +2658,7 @@
                 "word_start": 2
             },
             "printable": "я",
-            "technic": "а",
+            "technic": "я",
             "word": 3
         },
         {
@@ -2690,7 +2690,7 @@
                 "word_start": 4
             },
             "printable": "я",
-            "technic": "а",
+            "technic": "я",
             "word": 3
         },
         {
@@ -3191,7 +3191,7 @@
         },
         {
             "is_accent": false,
-            "is_consonant": false,
+            "is_consonant": true,
             "is_volve": false,
             "origin": "j",
             "positions:": {
@@ -3203,7 +3203,7 @@
             },
             "printable": "`",
             "technic": "j",
-            "word": 6
+            "word": 7
         },
         {
             "is_accent": false,
@@ -3218,7 +3218,7 @@
                 "word_start": 10
             },
             "printable": "я",
-            "technic": "а",
+            "technic": "я",
             "word": 7
         },
         {
@@ -4007,7 +4007,7 @@
         },
         {
             "is_accent": false,
-            "is_consonant": false,
+            "is_consonant": true,
             "is_volve": false,
             "origin": "j",
             "positions:": {
@@ -4019,7 +4019,7 @@
             },
             "printable": "`",
             "technic": "j",
-            "word": 14
+            "word": 15
         },
         {
             "is_accent": false,
@@ -4034,7 +4034,7 @@
                 "word_start": 4
             },
             "printable": "е",
-            "technic": "э",
+            "technic": "е",
             "word": 15
         },
         {
@@ -4071,7 +4071,7 @@
         },
         {
             "is_accent": false,
-            "is_consonant": false,
+            "is_consonant": true,
             "is_volve": false,
             "origin": "j",
             "positions:": {
@@ -4083,7 +4083,7 @@
             },
             "printable": "`",
             "technic": "j",
-            "word": 14
+            "word": 15
         },
         {
             "is_accent": false,
@@ -4098,7 +4098,7 @@
                 "word_start": 8
             },
             "printable": "е",
-            "technic": "э",
+            "technic": "е",
             "word": 15
         },
         {
@@ -4290,7 +4290,7 @@
                 "word_start": 6
             },
             "printable": "я",
-            "technic": "а",
+            "technic": "я",
             "word": 17
         },
         {
@@ -4343,7 +4343,7 @@
         },
         {
             "is_accent": false,
-            "is_consonant": false,
+            "is_consonant": true,
             "is_volve": false,
             "origin": "j",
             "positions:": {
@@ -4355,7 +4355,7 @@
             },
             "printable": "`",
             "technic": "j",
-            "word": 17
+            "word": 18
         },
         {
             "is_accent": false,
@@ -4370,7 +4370,7 @@
                 "word_start": 2
             },
             "printable": "е",
-            "technic": "э",
+            "technic": "е",
             "word": 18
         },
         {
@@ -4487,7 +4487,7 @@
         },
         {
             "is_accent": false,
-            "is_consonant": false,
+            "is_consonant": true,
             "is_volve": false,
             "origin": "j",
             "positions:": {
@@ -4499,7 +4499,7 @@
             },
             "printable": "`",
             "technic": "j",
-            "word": 18
+            "word": 19
         },
         {
             "is_accent": false,
@@ -4514,7 +4514,7 @@
                 "word_start": 6
             },
             "printable": "е",
-            "technic": "э",
+            "technic": "е",
             "word": 19
         },
         {
@@ -4834,7 +4834,7 @@
                 "word_start": 3
             },
             "printable": "я",
-            "technic": "а",
+            "technic": "я",
             "word": 22
         },
         {
@@ -4935,7 +4935,7 @@
         },
         {
             "is_accent": false,
-            "is_consonant": false,
+            "is_consonant": true,
             "is_volve": false,
             "origin": "j",
             "positions:": {
@@ -4947,7 +4947,7 @@
             },
             "printable": "`",
             "technic": "j",
-            "word": 22
+            "word": 23
         },
         {
             "is_accent": false,
@@ -4962,7 +4962,7 @@
                 "word_start": 7
             },
             "printable": "я",
-            "technic": "а",
+            "technic": "я",
             "word": 23
         },
         {
@@ -5490,7 +5490,7 @@
                 "word_start": 2
             },
             "printable": "ю",
-            "technic": "у",
+            "technic": "ю",
             "word": 30
         },
         {
@@ -5730,7 +5730,7 @@
                 "word_start": 5
             },
             "printable": "я",
-            "technic": "а",
+            "technic": "я",
             "word": 33
         },
         {
@@ -6055,7 +6055,7 @@
         },
         {
             "is_accent": false,
-            "is_consonant": false,
+            "is_consonant": true,
             "is_volve": false,
             "origin": "j",
             "positions:": {
@@ -6067,7 +6067,7 @@
             },
             "printable": "`",
             "technic": "j",
-            "word": 36
+            "word": 37
         },
         {
             "is_accent": false,
@@ -6082,7 +6082,7 @@
                 "word_start": 9
             },
             "printable": "е",
-            "technic": "э",
+            "technic": "е",
             "word": 37
         },
         {
@@ -6178,7 +6178,7 @@
                 "word_start": 5
             },
             "printable": "я",
-            "technic": "а",
+            "technic": "я",
             "word": 38
         },
         {
@@ -6583,7 +6583,7 @@
         },
         {
             "is_accent": false,
-            "is_consonant": false,
+            "is_consonant": true,
             "is_volve": false,
             "origin": "j",
             "positions:": {
@@ -6595,7 +6595,7 @@
             },
             "printable": "`",
             "technic": "j",
-            "word": 42
+            "word": 43
         },
         {
             "is_accent": false,
@@ -6610,7 +6610,7 @@
                 "word_start": 7
             },
             "printable": "я",
-            "technic": "а",
+            "technic": "я",
             "word": 43
         },
         {
@@ -6898,7 +6898,7 @@
                 "word_start": 4
             },
             "printable": "я",
-            "technic": "а",
+            "technic": "я",
             "word": 46
         },
         {
@@ -7047,7 +7047,7 @@
         },
         {
             "is_accent": false,
-            "is_consonant": false,
+            "is_consonant": true,
             "is_volve": false,
             "origin": "j",
             "positions:": {
@@ -7059,7 +7059,7 @@
             },
             "printable": "`",
             "technic": "j",
-            "word": 46
+            "word": 47
         },
         {
             "is_accent": false,
@@ -7074,7 +7074,7 @@
                 "word_start": 9
             },
             "printable": "е",
-            "technic": "э",
+            "technic": "е",
             "word": 47
         },
         {
@@ -7346,7 +7346,7 @@
                 "word_start": 4
             },
             "printable": "я",
-            "technic": "а",
+            "technic": "я",
             "word": 50
         },
         {
@@ -7714,7 +7714,7 @@
                 "word_start": 8
             },
             "printable": "я",
-            "technic": "а",
+            "technic": "я",
             "word": 55
         },
         {
@@ -7794,7 +7794,7 @@
                 "word_start": 4
             },
             "printable": "я",
-            "technic": "а",
+            "technic": "я",
             "word": 56
         },
         {

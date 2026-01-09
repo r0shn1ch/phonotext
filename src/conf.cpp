@@ -1,5 +1,31 @@
 #include "conf.h"
 
+static std::vector<std::string> splitUtf8(const std::string& s)
+{
+    std::vector<std::string> out;
+    out.reserve(s.size());
+    for (size_t i = 0; i < s.size();)
+    {
+        unsigned char c = static_cast<unsigned char>(s[i]);
+        size_t len = 1;
+        if ((c & 0x80u) == 0)
+            len = 1;
+        else if ((c & 0xE0u) == 0xC0u)
+            len = 2;
+        else if ((c & 0xF0u) == 0xE0u)
+            len = 3;
+        else if ((c & 0xF8u) == 0xF0u)
+            len = 4;
+
+        if (i + len > s.size())
+            len = 1;
+
+        out.emplace_back(s.substr(i, len));
+        i += len;
+    }
+    return out;
+}
+
 Conf::Conf()
 {
 }
@@ -20,108 +46,78 @@ Conf::~Conf()
 
 void Conf::makeConfig(std::string lngPath)
 {
-    std::ifstream fin(lngPath); // Подгрзка файла json
-    nlohmann::json data = nlohmann::json::parse(fin); // Выделение json файла
+    std::ifstream fin(lngPath);
+    nlohmann::json data = nlohmann::json::parse(fin);
 
-    makeAlphabetConfig(data["alphabet"]); // Преобразования алфавита из строкового типа в массив букв
+    consonants = data["consonants"];
+    consonantsSet.insert(consonants.begin(), consonants.end());
 
-    consonants = data["consonants"]; // Выборка символов из consonants
+    volves = data["volves"];
+    volvesSet.insert(volves.begin(), volves.end());
 
-    volves = data["volves"]; // Выборка символов из volves
-
-    // Соединение consonants и volves в один массив
     for (auto& i : consonants)
         words.push_back(i);
     for (auto& i : volves)
         words.push_back(i);
 
-    // Создание словаря: Буква с которой начинается комбинация букв - Сочетание символов (букв)
     std::vector<std::string> jAsOne;
     for (auto& i : data["as_one"])
         jAsOne.push_back(i);
     makeAsOneConfig(jAsOne);
 
-    makeAsSameConfig(data["as_same"], data["alphabet"]); // Создание словаря: Уникальный символ - Как символ слышится ( {'a':'a', 'p':'b', 'ph':'f'} )
+    makeAsSameConfig(data["as_same"], data["alphabet"]);
 
-    // Создания словаря: (Первая буква - (вторая буква - значение))
-    std::map<std::string, std::string> jDictionary;
-    for (nlohmann::json::iterator it = data["modifications"].begin(); it != data["modifications"].end(); it++)
+    std::unordered_map<std::string, std::string> jDictionary;
+    for (nlohmann::json::iterator it = data["modifications"].begin(); it != data["modifications"].end(); ++it)
         jDictionary.emplace(it.key(), it.value());
     makeModificationsConfig(jDictionary);
 }
 
-void Conf::makeAlphabetConfig(std::string jAlphabet)
-{
-    for (auto& i : jAlphabet)
-        alphabet.push_back(i);
-}
-
-void Conf::makeAsOneConfig(std::vector<std::string> jAsOne)
+void Conf::makeAsOneConfig(const std::vector<std::string>& jAsOne)
 {
     for (auto& i : jAsOne)
     {
-        auto it = asOne.find((char)i[0]);
-        if (it == asOne.end())
-            asOne.emplace((char)i[0], i);
+        asOne.emplace(i, i);
+    }
+}
+
+void Conf::makeAsSameConfig(const std::vector<std::vector<std::string>>& jAsSame, const std::string& jAlphabet)
+{
+    for (const auto& sym : splitUtf8(jAlphabet))
+        asSame[sym] = sym;
+
+    for (const auto& group : jAsSame)
+    {
+        const std::string& target = group[0];
+        for (const auto& symbol : group)
+        {
+            asSame[symbol] = target;
+        }
+    }
+}
+
+void Conf::makeModificationsConfig(const std::unordered_map<std::string, std::string>& jDictionary)
+{
+    for (const auto& pair : jDictionary)
+    {
+        const std::string& key = pair.first;
+        size_t firstCharLen = 0;
+        for (; key[0] & (0x80 >> firstCharLen); ++firstCharLen);
+        firstCharLen = (firstCharLen) ? firstCharLen : 1;
+
+        std::string firstChar = key.substr(0, firstCharLen);
+        std::string secondChar = key.substr(firstCharLen);
+
+        auto it = modifications.find(firstChar);
+        if (it == modifications.end())
+        {
+            std::unordered_map<std::string, std::string> tmp;
+            tmp.emplace(secondChar, pair.second);
+            modifications.emplace(firstChar, std::move(tmp));
+        }
         else
-            it->second = i;
-    }
-        
-}
-
-void Conf::makeAsSameConfig(std::vector<std::vector<std::string>> jAsSame, std::string jAlphabet)
-{
-    for (int i = 0; i < jAlphabet.size(); i++) // Добавление всех букв алфавита в словарь: Буква - Буква
-    {
-        std::string tempStr(1, jAlphabet[i]);
-        asSame.emplace(tempStr, tempStr);
-    }
-    for (int i = 0; i < jAsSame.size(); i++) // Добавление недостающих символов и сочетаний букв, замена значений словаря на "как слышится"
-    {
-        for (auto& j : jAsSame[i])
         {
-            // Добавление уникальных сиволов и сочетаний букв
-            if (asSame.find(j) == asSame.end())
-                asSame.emplace(j, j);
-
-            // Поиск и замена значений словаря на "как слышится"
-            std::map<std::string, std::string> ::iterator it = asSame.find(j);
-            it->second = jAsSame[i][0];
+            it->second.emplace(secondChar, pair.second);
         }
     }
-}
-
-void Conf::makeModificationsConfig(std::map<std::string, std::string> jDictionary)
-{
-    int l;
-    for (auto& i : jDictionary)
-    {
-        for(l = 0; i.first[0] & (0x80 >> l); ++l); l = (l)?l:1; 
-        // i.first.substr(0,l) -> first letter; i.first.substr(l) -> second letter
-
-        if (modifications.find(i.first.substr(0, l)) == modifications.end()) // Добавление в словарь, если первая буква отсутствует
-        {
-            std::map<std::string, std::string> tmp;
-            tmp.emplace(i.first.substr(l), i.second);
-            modifications.emplace(i.first.substr(0, l), tmp);
-        }
-        else // Добавление в подсловарь, если первая буква присутствует
-        {
-            std::map<std::string, std::map<std::string, std::string>> ::iterator it = modifications.find(i.first.substr(0, l));
-            it->second.emplace(i.first.substr(l), i.second);
-        }
-    }
-}
-
-Conf Conf::operator=(Conf& CONFIG)
-{
-    this->modifications = CONFIG.modifications;
-    this->asOne = CONFIG.asOne;
-    this->consonants = CONFIG.consonants;
-    this->volves = CONFIG.volves;
-    this->words = CONFIG.words;
-    this->asSame = CONFIG.asSame;
-    this->alphabet = CONFIG.alphabet;
-
-    return *this;
 }

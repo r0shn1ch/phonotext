@@ -3,7 +3,8 @@
 #include <fstream>
 #include "../include/nlohmann/json/json.hpp"
 #include <vector>
-#include <map>
+#include <unordered_map>
+#include <unordered_set>
 #include <algorithm>
 #include <iostream>
 
@@ -14,30 +15,29 @@ public:
     Conf(std::string lng);
     ~Conf();
 
-    std::map<std::string, std::map<std::string, std::string>> *getModifications() { return &modifications; }
-    std::map<std::string, std::string> getAsSame() { return asSame; }
-    std::map<char, std::string> getAsOne() { return asOne; }
-    std::vector<std::string> getWords() { return words; }
-    std::vector<std::string> getVolves() { return volves; }
-    std::vector<std::string> getConsonants() { return consonants; }
+    const std::unordered_map<std::string, std::unordered_map<std::string, std::string>>& getModifications() const { return modifications; }
+    const std::unordered_map<std::string, std::string>& getAsSame() const { return asSame; }
+    const std::unordered_map<std::string, std::string>& getAsOne() const { return asOne; }
+    const std::vector<std::string>& getWords() const { return words; }
+    const std::unordered_set<std::string>& getVolvesSet() const { return volvesSet; }
+    const std::unordered_set<std::string>& getConsonantsSet() const { return consonantsSet; }
+    const std::vector<std::string>& getVolves() const { return volves; }
+    const std::vector<std::string>& getConsonants() const { return consonants; }
 
-    Conf operator=(Conf& CONFIG);
-    //void notOperator(Conf* CONFIG);
+    Conf& operator=(const Conf& CONFIG) = default;
 
 private:
-    std::map<std::string, std::map<std::string, std::string>> modifications;
-    std::map<char, std::string> asOne;
+    std::unordered_map<std::string, std::unordered_map<std::string, std::string>> modifications;
+    std::unordered_map<std::string, std::string> asOne;
     std::vector<std::string> consonants;
+    std::unordered_set<std::string> consonantsSet;
     std::vector<std::string> volves;
+    std::unordered_set<std::string> volvesSet;
     std::vector<std::string> words;
-    std::map<std::string, std::string> asSame;
-    std::vector<char> alphabet;
+    std::unordered_map<std::string, std::string> asSame;
 
     void makeConfig(std::string lngPath);
-
-    void makeAlphabetConfig(std::string jAlphabet);
-    void makeAsOneConfig(std::vector<std::string> jAsOne);
-    void makeAsSameConfig(std::vector<std::vector<std::string>> jAsSame, std::string jAlphabet);
-    void makeModificationsConfig(std::map<std::string, std::string> jDictionary);
+    void makeAsOneConfig(const std::vector<std::string>& jAsOne);
+    void makeAsSameConfig(const std::vector<std::vector<std::string>>& jAsSame, const std::string& jAlphabet);
+    void makeModificationsConfig(const std::unordered_map<std::string, std::string>& jDictionary);
 };
-
