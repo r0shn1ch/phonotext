@@ -47,6 +47,13 @@ Conf::~Conf()
 void Conf::makeConfig(std::string lngPath)
 {
     std::ifstream fin(lngPath);
+    if (!fin.is_open())
+        throw std::runtime_error("Cannot open config file: " + lngPath);
+
+    fin.peek();
+    if (fin.eof())
+        throw std::runtime_error("Config file is empty: " + lngPath);
+
     nlohmann::json data = nlohmann::json::parse(fin);
 
     consonants = data["consonants"];

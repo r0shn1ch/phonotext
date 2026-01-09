@@ -8,7 +8,7 @@ endif()
 
 project(Phonotext VERSION 0.1 LANGUAGES CXX)
 
-set(CMAKE_AUTOUIC ON)
+set(CMAKE_AUTOUIC OFF) # no .ui
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
@@ -22,7 +22,8 @@ set(PROJECT_SOURCES
         src/main.cpp
         src/qtmainwindow.cpp
         src/qtmainwindow.h
-        src/qtmainwindow.ui
+        src/textanalyzer.cpp
+        src/textanalyzer.h
         src/conf.cpp src/conf.h src/letter.cpp
         src/letter.h src/phonotext.cpp
         src/phonotext.h src/proccessing.cpp

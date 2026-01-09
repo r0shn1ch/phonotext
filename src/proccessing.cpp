@@ -1,13 +1,74 @@
 ﻿#include "proccessing.h"
 #include <climits>
 #include <QDebug>
+#include <QCoreApplication>
+#include <QDir>
+#include <QFileInfo>
 #include <iostream>
 #include <unordered_set>
 #include <algorithm>
+#include <thread>
+#include <future>
+#include <atomic>
 #include <QFile>
 #include <QTextStream>
 #include <fstream>
 #include <iomanip>
+
+static QStringList candidateConfigDirs()
+{
+    QStringList dirs;
+    const QString appDir = QCoreApplication::applicationDirPath();
+
+    // 1) рядом с exe (для install/portable)
+    dirs << QDir(appDir).filePath("res/lng_conf");
+
+    // 2) для типичных build/* каталогов (../res)
+    dirs << QDir(appDir).filePath("../res/lng_conf");
+    dirs << QDir(appDir).filePath("../../res/lng_conf");
+
+    // 3) от текущей директории запуска
+    const QString cwd = QDir::currentPath();
+    dirs << QDir(cwd).filePath("res/lng_conf");
+    dirs << QDir(cwd).filePath("../res/lng_conf");
+
+    // очищаем дубликаты
+    dirs.removeDuplicates();
+    return dirs;
+}
+
+static QString resolveConfigPath(const std::string& lng)
+{
+    const QString s = QString::fromStdString(lng);
+
+    // Если уже передан явный путь к json
+    if (s.endsWith(".json", Qt::CaseInsensitive))
+    {
+        QFileInfo fi(s);
+        if (fi.exists() && fi.isFile())
+            return fi.absoluteFilePath();
+    }
+
+    QString fileName;
+    if (s == "rus" || s == "russian" || s == "ru")
+        fileName = "russian.json";
+    else if (s == "eng" || s == "english" || s == "en")
+        fileName = "english.json";
+    else if (s == "lat" || s == "latin")
+        fileName = "latin.json";
+    else
+        fileName = s; // попробуем как есть
+
+    for (const QString& dir : candidateConfigDirs())
+    {
+        const QString p = QDir(dir).filePath(fileName);
+        QFileInfo fi(p);
+        if (fi.exists() && fi.isFile())
+            return fi.absoluteFilePath();
+    }
+
+    return fileName;
+}
 
 static std::vector<std::string> splitUtf8(const std::string& s)
 {
@@ -67,33 +128,59 @@ static bool isCorrectComb(std::forward_list<Letter>::iterator it1,
     return true;
 }
 
-Proccessing::Proccessing(Phonotext pt, std::string lng, double min_pwr, double max_pwr)
-    : pt(std::move(pt)), CONFIG(lng), min_pwr(min_pwr), max_pwr(max_pwr)
+Proccessing::Proccessing(Phonotext pt,
+                         std::string lng,
+                         double min_pwr,
+                         double max_pwr,
+                         ProgressCallback progressCb,
+                         LogCallback logCb)
+    : pt(std::move(pt))
+    , CONFIG()
+    , min_pwr(min_pwr)
+    , max_pwr(max_pwr)
+    , m_progress(std::move(progressCb))
+    , m_log(std::move(logCb))
 {
-    qDebug() << "proccess start";
+    // Загружаем языковую конфигурацию. В GUI сюда может прийти как код ("rus"),
+    // так и абсолютный путь к *.json.
+    const QString cfg = resolveConfigPath(lng);
+    CONFIG.makeConfig(cfg.toStdString());
+
+    reportProgress(0, "Старт");
     this->proccess();
+    reportProgress(100, "Готово");
 }
 
 void Proccessing::proccess()
 {
-    qDebug() << "modify";
+    reportProgress(5, "Модификации");
     modifyProccessor();
-    qDebug() << "same";
+    reportProgress(15, "Нормализация символов");
     sameProccessor();
-    qDebug() << "join";
+    reportProgress(25, "Склейка многосимвольных букв");
     joinProccessor();
-    qDebug() << "number";
+    reportProgress(35, "Нумерация");
     numberProccessor();
-    qDebug() << "finder";
+    reportProgress(45, "Поиск гласных");
     finderVolve();
-    qDebug() << "SP";
+    reportProgress(55, "Диапазоны слогов");
     SPmaxProccessor();
-    qDebug() << "combinations";
+    reportProgress(65, "Комбинации");
     combinationsProccessor();
-    qDebug() << "repeat";
+    reportProgress(75, "Повторы и сила");
     repeatProccessor();
-    qDebug() << "repeat ended";
-    qDebug() << "proccessing end";
+}
+
+void Proccessing::reportProgress(int percent, const std::string& stage)
+{
+    if (m_progress)
+        m_progress(percent, stage);
+}
+
+void Proccessing::reportLog(const std::string& line)
+{
+    if (m_log)
+        m_log(line);
 }
 
 void Proccessing::modifyProccessor()
@@ -599,38 +686,90 @@ double Proccessing::get_pwr_combs(const std::array<std::forward_list<Letter>::it
 
 double Proccessing::handlePower(std::unordered_map<std::string, Repeat>& repeats)
 {
-    double repeats_power = 0;
+    // refactoring needed!
 
-    for (auto& rep : repeats)
+    std::vector<Repeat*> items;
+    items.reserve(repeats.size());
+    for (auto& kv : repeats)
+        items.push_back(&kv.second);
+
+    const size_t total = items.size();
+    if (total == 0)
+        return 0.0;
+
+    unsigned int hw = std::thread::hardware_concurrency();
+    if (hw == 0) hw = 4;
+    const unsigned int threads = std::min<unsigned int>(hw, static_cast<unsigned int>(std::max<size_t>(1, total)));
+
+    std::atomic<size_t> done{0};
+    std::atomic<int> lastReported{-1};
+
+    auto work = [&](size_t begin, size_t end) -> double
     {
-        auto& combs = rep.second.combs;
-        const size_t m = combs.size();
-        if (m < 2)
+        double localSum = 0.0;
+        for (size_t idx = begin; idx < end; ++idx)
         {
-            rep.second.power = 0;
-            continue;
-        }
-
-        std::sort(combs.begin(), combs.end(),
-                  [](const RepeatComb& a, const RepeatComb& b) { return a.firstNumber < b.firstNumber; });
-
-        double pwr = 0;
-
-        for (size_t i = 0; i < m; ++i)
-        {
-            for (size_t j = i + 1; j < m; ++j)
+            Repeat& rep = *items[idx];
+            auto& combs = rep.combs;
+            const size_t m = combs.size();
+            if (m < 2)
             {
-                pwr += get_pwr_combs(combs[i].comb, combs[j].comb, combs[i].score, combs[j].score);
-                if (combs[j].firstNumber - combs[i].firstNumber > 50)
-                    break;
+                rep.power = 0;
+            }
+            else
+            {
+                std::sort(combs.begin(), combs.end(),
+                          [](const RepeatComb& a, const RepeatComb& b) { return a.firstNumber < b.firstNumber; });
+
+                double pwr = 0;
+                for (size_t i = 0; i < m; ++i)
+                {
+                    for (size_t j = i + 1; j < m; ++j)
+                    {
+                        pwr += get_pwr_combs(combs[i].comb, combs[j].comb, combs[i].score, combs[j].score);
+                        if (combs[j].firstNumber - combs[i].firstNumber > 50)
+                            break;
+                    }
+                }
+                rep.power = pwr;
+                localSum += pwr;
+            }
+
+            const size_t d = done.fetch_add(1) + 1;
+            const int percent = static_cast<int>((d * 100) / total);
+            int prev = lastReported.load();
+            if (percent != prev && lastReported.compare_exchange_strong(prev, percent))
+            {
+                // приведение к диапазону 75..100
+                const int mapped = 75 + (percent * 25) / 100;
+                reportProgress(mapped, "Расчёт силы повторов");
             }
         }
+        return localSum;
+    };
 
-        rep.second.power = pwr;
-        repeats_power += pwr;
+    if (threads == 1 || total < 32)
+    {
+        return work(0, total);
     }
 
-    return repeats_power;
+    std::vector<std::future<double>> fut;
+    fut.reserve(threads);
+
+    const size_t chunk = (total + threads - 1) / threads;
+    for (unsigned int t = 0; t < threads; ++t)
+    {
+        size_t b = t * chunk;
+        size_t e = std::min(total, b + chunk);
+        if (b >= e) break;
+        fut.emplace_back(std::async(std::launch::async, work, b, e));
+    }
+
+    double sum = 0.0;
+    for (auto& f : fut)
+        sum += f.get();
+
+    return sum;
 }
 
 void Proccessing::print(QString filename)

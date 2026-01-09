@@ -25,6 +25,7 @@ public:
     const std::vector<std::string>& getConsonants() const { return consonants; }
 
     Conf& operator=(const Conf& CONFIG) = default;
+    void makeConfig(std::string lngPath);
 
 private:
     std::unordered_map<std::string, std::unordered_map<std::string, std::string>> modifications;
@@ -36,7 +37,6 @@ private:
     std::vector<std::string> words;
     std::unordered_map<std::string, std::string> asSame;
 
-    void makeConfig(std::string lngPath);
     void makeAsOneConfig(const std::vector<std::string>& jAsOne);
     void makeAsSameConfig(const std::vector<std::vector<std::string>>& jAsSame, const std::string& jAlphabet);
     void makeModificationsConfig(const std::unordered_map<std::string, std::string>& jDictionary);

@@ -6,6 +6,7 @@
 #include <unordered_set>
 #include <unordered_map>
 #include <array>
+#include <functional>
 
 #include "../include/nlohmann/json/json.hpp"
 #include "conf.h"
@@ -17,7 +18,15 @@ using namespace nlohmann::literals;
 class Proccessing
 {
 public:
-    Proccessing(Phonotext pt, std::string lng, double min_pwr, double max_pwr);
+    using ProgressCallback = std::function<void(int /*percent*/, const std::string& /*stage*/)>;
+    using LogCallback = std::function<void(const std::string& /*line*/)>;
+
+    Proccessing(Phonotext pt,
+                std::string lng,
+                double min_pwr,
+                double max_pwr,
+                ProgressCallback progressCb = nullptr,
+                LogCallback logCb = nullptr);
 
     const Phonotext& getResult() const { return this->pt; }
     void print(QString);
@@ -53,4 +62,10 @@ private:
     double handlePower(std::unordered_map<std::string, Repeat>& repeats);
 
     std::chrono::milliseconds ttttt;
+
+    ProgressCallback m_progress;
+    LogCallback m_log;
+
+    void reportProgress(int percent, const std::string& stage);
+    void reportLog(const std::string& line);
 };
