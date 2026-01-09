@@ -6,7 +6,7 @@
 #include <unordered_set>
 
 Proccessing::Proccessing(Phonotext pt, std::string lng, double min_pwr, double max_pwr)
-    : pt(pt), CONFIG(lng), min_pwr(min_pwr), max_pwr(max_pwr)
+    : pt(std::move(pt)), CONFIG(lng), min_pwr(min_pwr), max_pwr(max_pwr)
 {
     qDebug() << "proccess start";
     this->proccess();
@@ -334,39 +334,46 @@ void Proccessing::combinationsProccessor(int N)
 
     for (size_t i = 0; i < pt.SP.size(); ++i)
     {
-        auto localInds = findLocalWordsInds(pt.SP[i]);
-        int posVolve = localInds.first;
-        const auto& posCons = localInds.second;
+        std::vector<std::forward_list<Letter>::iterator> letters;
+        letters.reserve(64);
+        std::vector<int> posCons;
+        posCons.reserve(16);
+        int posVolve = -1;
 
-        if (posCons.size() < 2) continue;
+        int idx = 0;
+        for (auto it = pt.SP[i].first; it != pt.SP[i].second; ++it, ++idx)
+        {
+            letters.push_back(it);
+            if (it->isVolve)
+                posVolve = idx;
+            else
+                posCons.push_back(idx);
+        }
 
-        std::vector<std::pair<int, int>> consCombs;
-        size_t expectedSize = (posCons.size() * (posCons.size() - 1)) / 2;
-        consCombs.reserve(expectedSize);
+        if (posVolve < 0 || posCons.size() < 2)
+            continue;
+
+        const size_t expectedSize = (posCons.size() * (posCons.size() - 1)) / 2;
+        std::vector<std::vector<std::forward_list<Letter>::iterator>> itCombs;
+        itCombs.reserve(expectedSize);
 
         for (size_t j = 0; j < posCons.size(); ++j)
-            for (size_t k = j + 1; k < posCons.size(); ++k)
-                consCombs.emplace_back(posCons[j], posCons[k]);
-
-        std::vector<std::vector<std::forward_list<Letter>::iterator>> itCombs;
-        itCombs.reserve(consCombs.size());
-
-        for (const auto& comb : consCombs)
         {
-            std::vector<int> combs = {comb.first, comb.second, posVolve};
-            std::sort(combs.begin(), combs.end());
-
-            auto it1 = pt.SP[i].first;
-            auto it2 = pt.SP[i].first;
-            auto it3 = pt.SP[i].first;
-
-            std::advance(it1, combs[0]);
-            std::advance(it2, combs[1]);
-            std::advance(it3, combs[2]);
-
-            if (isCorrectComb(it1, it2, it3))
+            for (size_t k = j + 1; k < posCons.size(); ++k)
             {
-                itCombs.emplace_back(std::vector<std::forward_list<Letter>::iterator>{it1, it2, it3});
+                int i1 = posCons[j];
+                int i2 = posCons[k];
+                int i3 = posVolve;
+                if (i1 > i2) std::swap(i1, i2);
+                if (i2 > i3) std::swap(i2, i3);
+                if (i1 > i2) std::swap(i1, i2);
+
+                auto it1 = letters[static_cast<size_t>(i1)];
+                auto it2 = letters[static_cast<size_t>(i2)];
+                auto it3 = letters[static_cast<size_t>(i3)];
+
+                if (isCorrectComb(it1, it2, it3))
+                    itCombs.emplace_back(std::vector<std::forward_list<Letter>::iterator>{it1, it2, it3});
             }
         }
 

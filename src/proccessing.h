@@ -18,7 +18,7 @@ class Proccessing
 public:
     Proccessing(Phonotext pt, std::string lng, double min_pwr, double max_pwr);
 
-    Phonotext getResult() { return this->pt; }
+    const Phonotext& getResult() const { return this->pt; }
     void print(QString);
     void createJson(std::string);
 

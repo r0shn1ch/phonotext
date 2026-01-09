@@ -4,6 +4,7 @@
 #include <QTextStream>
 #include <QDebug>
 #include <QElapsedTimer>
+#include <utility>
 //#include <QTextCodec>
 
 #include "phonotext.h"
@@ -36,7 +37,7 @@ int main(int argc, char *argv[])
     qDebug() << "Read End";
 
     Phonotext pt(data.toStdString());
-    Proccessing proc(pt, "rus", 0., 100.);
+    Proccessing proc(std::move(pt), "rus", 0., 100.);
 
     proc.createJson("res/data/outJson.json");
     proc.print("res/data/out.txt");
