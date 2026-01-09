@@ -5,6 +5,7 @@
 #include <chrono>
 #include <unordered_set>
 #include <unordered_map>
+#include <array>
 
 #include "../include/nlohmann/json/json.hpp"
 #include "conf.h"
@@ -39,13 +40,17 @@ private:
     void numberProccessor();
     void finderVolve();
     void SPmaxProccessor();
-    std::pair<int, std::vector<int>> findLocalWordsInds(std::pair<std::forward_list<Letter>::iterator, std::forward_list<Letter>::iterator> localSP);
     void combinationsProccessor(int N = 2);
     void repeatProccessor();
-    std::pair<bool, double> rusFilterComb(std::vector<std::forward_list<Letter>::iterator> comb, const std::vector<std::string>& words);
 
-    double get_pwr (const std::forward_list<Letter>::iterator &a, const std::forward_list<Letter>::iterator& b);
-    double get_pwr_combs (const std::vector<std::forward_list<Letter>::iterator>& combA, const std::vector<std::forward_list<Letter>::iterator>& combsB);
-    double handlePower(std::map<std::string, Repeat>& repeats);
+    std::pair<bool, double> rusFilterComb(const std::array<std::forward_list<Letter>::iterator, 3>& comb);
+
+    double get_pwr(const std::forward_list<Letter>::iterator& a, const std::forward_list<Letter>::iterator& b);
+    double get_pwr_combs(const std::array<std::forward_list<Letter>::iterator, 3>& combA,
+                         const std::array<std::forward_list<Letter>::iterator, 3>& combB,
+                         double scoreA,
+                         double scoreB);
+    double handlePower(std::unordered_map<std::string, Repeat>& repeats);
+
     std::chrono::milliseconds ttttt;
 };

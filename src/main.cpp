@@ -20,7 +20,7 @@ int main(int argc, char *argv[])
     QTextCodec::setCodecForLocale(codec);
 #endif
 
-    QFile file("res/data/in1.txt");
+    QFile file("res/data/in.txt");
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
         qDebug() << "File cannot be opened";
         return 0;
