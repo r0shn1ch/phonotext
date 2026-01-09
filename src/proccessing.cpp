@@ -5,6 +5,32 @@
 #include <iostream>
 #include <unordered_set>
 
+static std::vector<std::string> splitUtf8(const std::string& s)
+{
+    std::vector<std::string> out;
+    out.reserve(s.size());
+    for (size_t i = 0; i < s.size();)
+    {
+        unsigned char c = static_cast<unsigned char>(s[i]);
+        size_t len = 1;
+        if ((c & 0x80u) == 0)
+            len = 1;
+        else if ((c & 0xE0u) == 0xC0u)
+            len = 2;
+        else if ((c & 0xF0u) == 0xE0u)
+            len = 3;
+        else if ((c & 0xF8u) == 0xF0u)
+            len = 4;
+
+        if (i + len > s.size())
+            len = 1;
+
+        out.emplace_back(s.substr(i, len));
+        i += len;
+    }
+    return out;
+}
+
 Proccessing::Proccessing(Phonotext pt, std::string lng, double min_pwr, double max_pwr)
     : pt(std::move(pt)), CONFIG(lng), min_pwr(min_pwr), max_pwr(max_pwr)
 {
@@ -38,55 +64,68 @@ void Proccessing::modifyProccessor()
 {
     std::string tmp_a;
     std::string tmp_b;
-    std::string tmp_c;
+
     auto it = pt.basetext.begin();
-    auto itPreviosLetter = pt.basetext.before_begin();
-    bool needChange = false;
+    auto itPrev = pt.basetext.before_begin();
 
     const auto& modifications = CONFIG.getModifications();
 
     while (it != pt.basetext.end())
     {
-        if (needChange)
-        {
-            needChange = false;
-        }
+        const std::string origin = it->origin;
 
-        std::string origin = it->origin;
         if (it == pt.basetext.begin())
         {
             tmp_b = origin;
+            itPrev = it;
+            ++it;
+            continue;
         }
-        else
-        {
-            tmp_a = tmp_b;
-            tmp_b = origin;
 
-            auto modFirstKey = modifications.find(tmp_a);
-            if (modFirstKey != modifications.end())
+        tmp_a = tmp_b;
+        tmp_b = origin;
+
+        auto modFirstKey = modifications.find(tmp_a);
+        if (modFirstKey != modifications.end())
+        {
+            const auto& innerMap = modFirstKey->second;
+            auto modSecondKey = innerMap.find(tmp_b);
+            if (modSecondKey != innerMap.end())
             {
-                const auto& innerMap = modFirstKey->second;
-                auto modSecondKey = innerMap.find(tmp_b);
-                if (modSecondKey != innerMap.end())
+                const std::string& repl = modSecondKey->second;
+                auto symbols = splitUtf8(repl);
+                if (!symbols.empty())
                 {
-                    tmp_c = modSecondKey->second;
-                    int i,l;
-                    int firstCharLen = 1;
-                    if (!tmp_c.empty()) {
-                        for (i = 0; tmp_c[0] & (0x80 >> i); ++i); i = (i) ? i : 1;
-                        for (l = 0; tmp_c[i] & (0x80 >> l); ++l); l = (l) ? l : 1;
+                    itPrev->origin = symbols[0];
+                    itPrev->printable = symbols[0];
+                    itPrev->technic = "+";
+
+                    if (symbols.size() == 1)
+                    {
+                        it = itPrev;
+                        pt.basetext.erase_after(itPrev);
                     }
-                    itPreviosLetter->origin = tmp_c.substr(0, i);
-                    it->origin = tmp_c.substr(i, l);
-                    pt.basetext.emplace_after(it, Letter((tmp_c.substr(i + l))));
-                    auto b = it;
-                    (++b)->printable = it->printable;
-                    it->printable = "`";
-                    needChange = true;
+                    else
+                    {
+                        it->origin = symbols[1];
+                        it->printable = symbols[1];
+                        it->technic = "+";
+
+                        auto insertPos = it;
+                        for (size_t si = 2; si < symbols.size(); ++si)
+                        {
+                            insertPos = pt.basetext.emplace_after(insertPos, Letter(symbols[si]));
+                            insertPos->printable = symbols[si];
+                            insertPos->technic = "+";
+                        }
+                    }
+
+                    tmp_b = (std::next(itPrev) != pt.basetext.end()) ? std::next(itPrev)->origin : itPrev->origin;
                 }
             }
         }
-        itPreviosLetter = it;
+
+        itPrev = it;
         ++it;
     }
 }
@@ -253,6 +292,9 @@ void Proccessing::numberProccessor()
 
 void Proccessing::finderVolve()
 {
+    volveIterators.clear();
+    volveIterators.reserve(256);
+
     for (auto it = pt.basetext.begin(); it != pt.basetext.end(); ++it)
         if (it->isVolve)
             volveIterators.push_back(it);
@@ -399,7 +441,7 @@ void Proccessing::repeatProccessor()
                     a.push_back(i->technic);
             }
 
-            if (a.size() < 2) continue; // Нужно минимум 2 согласных
+            if (a.size() < 2) continue;
 
             std::set<std::string> tmpWords(a.begin(), a.end());
             std::string setToStr;
